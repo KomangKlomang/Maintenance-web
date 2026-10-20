@@ -5,3 +5,7 @@ dist
 .graphify_detect.json
 .env
 .env.local
+build-log.txt
+install-log.txt
+install-log2.txt
+.vercel
