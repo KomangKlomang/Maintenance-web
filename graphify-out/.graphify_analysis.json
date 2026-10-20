@@ -1,0 +1,228 @@
+{
+  "communities": {
+    "0": [
+      "prd_dynamic_template_system",
+      "prd_kebutuhan_toko_detil",
+      "prd_master_template_menu",
+      "prd_pekerjaan_random",
+      "prd_relative_deadline_template",
+      "prd_simpan_sebagai_template",
+      "prd_toko_go",
+      "prd_toko_tutup",
+      "sds_default_template_toko_go",
+      "sds_table_templates",
+      "sds_type_project_template"
+    ],
+    "1": [
+      "prd_pic_nama_wa_tanpa_login",
+      "prd_wa_dual_mode",
+      "prd_wa_trigger_deadline_pagi",
+      "prd_wa_trigger_project_baru",
+      "sds_api_wa_notify_project",
+      "sds_env_wa_main_group",
+      "sds_normalize_phone",
+      "sds_notify_new_project",
+      "sds_table_pics",
+      "sds_type_pic",
+      "sds_wa_me_deep_link_generator"
+    ],
+    "2": [
+      "design_system_opstrack_master_lucide_icons",
+      "design_system_opstrack_master_touch_targets",
+      "prd_vercel_realtime_deploy",
+      "prd_work_status_three_stage",
+      "sds_env_supabase",
+      "sds_opstrack_architecture",
+      "sds_react_vite_typescript_tailwind",
+      "sds_supabase_postgresql_realtime",
+      "sds_type_workstatus",
+      "sds_zustand_persist_fallback"
+    ],
+    "3": [
+      "prd_project",
+      "prd_sub_task_checklist",
+      "prd_task",
+      "sds_table_projects",
+      "sds_type_project",
+      "sds_type_subtaskitem",
+      "sds_type_taskitem"
+    ],
+    "4": [
+      "prd_mobile_first_pwa",
+      "prd_pin_workspace_gate",
+      "sds_env_vite_workspace_pin",
+      "sds_responsive_bottom_nav",
+      "sds_vite_plugin_pwa",
+      "sds_workspace_pin_gate"
+    ],
+    "5": [
+      "design_system_opstrack_master_opstrack_ui",
+      "prd_dashboard_action_now",
+      "prd_opstrack",
+      "prd_timeline_pekerjaan",
+      "prd_zero_missed_deadlines"
+    ],
+    "6": [
+      "sds_api_cron_deadline_digest",
+      "sds_env_wa_api_token",
+      "sds_vercel_cron_08_wib",
+      "sds_vercel_json",
+      "sds_wa_gateway_fonnte"
+    ]
+  },
+  "cohesion": {
+    "0": 0.21818181818181817,
+    "1": 0.23636363636363636,
+    "2": 0.2,
+    "3": 0.42857142857142855,
+    "4": 0.3333333333333333,
+    "5": 0.4,
+    "6": 0.4
+  },
+  "gods": [
+    {
+      "id": "prd_opstrack",
+      "label": "OpsTrack",
+      "degree": 6
+    },
+    {
+      "id": "sds_api_cron_deadline_digest",
+      "label": "GET /api/cron/deadline-digest",
+      "degree": 6
+    },
+    {
+      "id": "sds_type_taskitem",
+      "label": "TaskItem Interface",
+      "degree": 6
+    },
+    {
+      "id": "prd_dynamic_template_system",
+      "label": "Sistem Template Dinamis",
+      "degree": 5
+    },
+    {
+      "id": "prd_task",
+      "label": "Task (Simpel vs Detil, Deadline, PIC)",
+      "degree": 5
+    },
+    {
+      "id": "prd_master_template_menu",
+      "label": "Menu Master Template",
+      "degree": 5
+    },
+    {
+      "id": "prd_pic_nama_wa_tanpa_login",
+      "label": "Manajemen PIC (Nama + WhatsApp, Tanpa Akun Login)",
+      "degree": 5
+    },
+    {
+      "id": "sds_type_pic",
+      "label": "PIC Interface",
+      "degree": 5
+    },
+    {
+      "id": "prd_work_status_three_stage",
+      "label": "Alur Status 3 Tahap (TODO / IN_PROGRESS / DONE)",
+      "degree": 4
+    },
+    {
+      "id": "prd_dashboard_action_now",
+      "label": "Dashboard Panel Harus Dikerjakan Sekarang",
+      "degree": 4
+    }
+  ],
+  "surprises": [
+    {
+      "source": "ProjectTemplate Interface",
+      "target": "Sistem Template Dinamis",
+      "source_files": [
+        "SDS.md",
+        "PRD.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link; peripheral node `ProjectTemplate Interface` unexpectedly reaches hub `Sistem Template Dinamis`"
+    },
+    {
+      "source": "Dashboard Panel Harus Dikerjakan Sekarang",
+      "target": "GET /api/cron/deadline-digest",
+      "source_files": [
+        "PRD.md",
+        "SDS.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Supabase Table templates",
+      "target": "Menu Master Template",
+      "source_files": [
+        "SDS.md",
+        "PRD.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link; peripheral node `Supabase Table templates` unexpectedly reaches hub `Menu Master Template`"
+    },
+    {
+      "source": "TaskItem Interface",
+      "target": "Relative Deadline pada Template (H-n)",
+      "source_files": [
+        "SDS.md",
+        "PRD.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "WorkStatus Type (todo | in_progress | done)",
+      "target": "Alur Status 3 Tahap (TODO / IN_PROGRESS / DONE)",
+      "source_files": [
+        "SDS.md",
+        "PRD.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `OpsTrack` connect `Community 5` to `Community 0`, `Community 1`, `Community 2`, `Community 4`?",
+      "why": "High betweenness centrality (0.432) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Manajemen PIC (Nama + WhatsApp, Tanpa Akun Login)` connect `Community 1` to `Community 5`?",
+      "why": "High betweenness centrality (0.252) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `TaskItem Interface` connect `Community 3` to `Community 0`, `Community 1`, `Community 6`?",
+      "why": "High betweenness centrality (0.227) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `OpsTrack` (e.g. with `OpsTrack Design System` and `OpsTrack System Architecture (Vercel + PWA + WA Engine)`) actually correct?",
+      "why": "`OpsTrack` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `GET /api/cron/deadline-digest` (e.g. with `Dashboard Panel Harus Dikerjakan Sekarang` and `Trigger B — Pengingat Deadline Pagi (08:00 WIB)`) actually correct?",
+      "why": "`GET /api/cron/deadline-digest` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `TaskItem Interface` (e.g. with `Relative Deadline pada Template (H-n)` and `Task (Simpel vs Detil, Deadline, PIC)`) actually correct?",
+      "why": "`TaskItem Interface` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Toko Tutup (Store Closing)`, `Pekerjaan Random (Ad-Hoc)`, `Timeline Pekerjaan` to the rest of the system?",
+      "why": "15 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}

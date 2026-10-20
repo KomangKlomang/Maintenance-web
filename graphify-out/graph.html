@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>graphify - graphify-out/graph.html</title>
+<script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
+        integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
+        crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  #graph { flex: 1; }
+  #sidebar { width: 280px; background: #1a1a2e; border-left: 1px solid #2a2a4e; display: flex; flex-direction: column; overflow: hidden; }
+  #search-wrap { padding: 12px; border-bottom: 1px solid #2a2a4e; }
+  #search { width: 100%; background: #0f0f1a; border: 1px solid #3a3a5e; color: #e0e0e0; padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+  #search:focus { border-color: #4E79A7; }
+  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 12px; border-bottom: 1px solid #2a2a4e; display: none; }
+  .search-item { padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-item:hover { background: #2a2a4e; }
+  #info-panel { padding: 14px; border-bottom: 1px solid #2a2a4e; min-height: 140px; }
+  #info-panel h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #info-content { font-size: 13px; color: #ccc; line-height: 1.6; }
+  #info-content .field { margin-bottom: 5px; }
+  #info-content .field b { color: #e0e0e0; }
+  #info-content .empty { color: #555; font-style: italic; }
+  .neighbor-link { display: block; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #333; }
+  .neighbor-link:hover { background: #2a2a4e; }
+  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+  #legend-wrap { flex: 1; overflow-y: auto; padding: 12px; }
+  #legend-wrap h3 { font-size: 13px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 4px; font-size: 12px; }
+  .legend-item:hover { background: #2a2a4e; padding-left: 4px; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-count { color: #666; font-size: 11px; }
+  #stats { padding: 10px 14px; border-top: 1px solid #2a2a4e; font-size: 11px; color: #555; }
+  #legend-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 4px 0; }
+  #legend-controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: #aaa; user-select: none; }
+  #legend-controls label:hover { color: #e0e0e0; }
+  .legend-cb, #select-all-cb { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; border: 1.5px solid #3a3a5e; border-radius: 3px; background: #0f0f1a; cursor: pointer; position: relative; flex-shrink: 0; }
+  .legend-cb:checked, #select-all-cb:checked { background: #4E79A7; border-color: #4E79A7; }
+  .legend-cb:checked::after, #select-all-cb:checked::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  #select-all-cb:indeterminate { background: #4E79A7; border-color: #4E79A7; }
+  #select-all-cb:indeterminate::after { content: ''; position: absolute; left: 2px; top: 5px; width: 8px; height: 2px; background: #fff; border: none; transform: none; }
+</style>
+</head>
+<body>
+<div id="graph"></div>
+<div id="sidebar">
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search nodes..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="info-panel">
+    <h3>Node Info</h3>
+    <div id="info-content"><span class="empty">Click a node to inspect it</span></div>
+  </div>
+  <div id="legend-wrap">
+    <h3>Communities</h3>
+    <div id="legend-controls">
+      <label><input type="checkbox" id="select-all-cb" checked onchange="toggleAllCommunities(!this.checked)">Select All</label>
+    </div>
+    <div id="legend"></div>
+  </div>
+  <div id="stats">55 nodes &middot; 71 edges &middot; 7 communities</div>
+</div>
+<script>
+const RAW_NODES = [{"id": "prd_dynamic_template_system", "label": "Sistem Template Dinamis", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 35.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Sistem Template Dinamis", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 5}, {"id": "prd_kebutuhan_toko_detil", "label": "Kebutuhan Toko (Mode Detil)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Kebutuhan Toko (Mode Detil)", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 1}, {"id": "prd_master_template_menu", "label": "Menu Master Template", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 35.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Menu Master Template", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 5}, {"id": "prd_pekerjaan_random", "label": "Pekerjaan Random (Ad-Hoc)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Pekerjaan Random (Ad-Hoc)", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 1}, {"id": "prd_relative_deadline_template", "label": "Relative Deadline pada Template (H-n)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Relative Deadline pada Template (H-n)", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 3}, {"id": "prd_simpan_sebagai_template", "label": "Simpan sebagai Template", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Simpan sebagai Template", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 1}, {"id": "prd_toko_go", "label": "Toko GO (Grand Opening)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Toko GO (Grand Opening)", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 3}, {"id": "prd_toko_tutup", "label": "Toko Tutup (Store Closing)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Toko Tutup (Store Closing)", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "PRD.md", "file_type": "concept", "degree": 1}, {"id": "sds_default_template_toko_go", "label": "Default Template Toko GO", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Default Template Toko GO", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_table_templates", "label": "Supabase Table templates", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Supabase Table templates", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_type_project_template", "label": "ProjectTemplate Interface", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "ProjectTemplate Interface", "community": 0, "community_name": "Template & Jenis Toko", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "prd_pic_nama_wa_tanpa_login", "label": "Manajemen PIC (Nama + WhatsApp, Tanpa Akun Login)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 35.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Manajemen PIC (Nama + WhatsApp, Tanpa Akun Login)", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "PRD.md", "file_type": "concept", "degree": 5}, {"id": "prd_wa_dual_mode", "label": "Dual-Mode WA (API Otomatis + wa.me Direct)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Dual-Mode WA (API Otomatis + wa.me Direct)", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "PRD.md", "file_type": "concept", "degree": 3}, {"id": "prd_wa_trigger_deadline_pagi", "label": "Trigger B \u2014 Pengingat Deadline Pagi (08:00 WIB)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Trigger B \u2014 Pengingat Deadline Pagi (08:00 WIB)", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "PRD.md", "file_type": "concept", "degree": 4}, {"id": "prd_wa_trigger_project_baru", "label": "Trigger A \u2014 Notifikasi Project Baru ke WA PIC", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Trigger A \u2014 Notifikasi Project Baru ke WA PIC", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "PRD.md", "file_type": "concept", "degree": 4}, {"id": "sds_api_wa_notify_project", "label": "POST /api/wa/notify-project", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "POST /api/wa/notify-project", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 4}, {"id": "sds_env_wa_main_group", "label": "WA_MAIN_GROUP_OR_ADMIN_PHONE", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "WA_MAIN_GROUP_OR_ADMIN_PHONE", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_normalize_phone", "label": "normalizePhone", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "normalizePhone", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_notify_new_project", "label": "notifyNewProject", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "notifyNewProject", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_table_pics", "label": "Supabase Table pics", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Supabase Table pics", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_type_pic", "label": "PIC Interface", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 35.0, "font": {"size": 12, "color": "#ffffff"}, "title": "PIC Interface", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 5}, {"id": "sds_wa_me_deep_link_generator", "label": "Direct WA Deep-Link Generator (wa.me/62...)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Direct WA Deep-Link Generator (wa.me/62...)", "community": 1, "community_name": "PIC & Notifikasi WA", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "prd_vercel_realtime_deploy", "label": "Deploy Vercel dengan Sinkronisasi Real-Time", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Deploy Vercel dengan Sinkronisasi Real-Time", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "PRD.md", "file_type": "concept", "degree": 2}, {"id": "prd_work_status_three_stage", "label": "Alur Status 3 Tahap (TODO / IN_PROGRESS / DONE)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Alur Status 3 Tahap (TODO / IN_PROGRESS / DONE)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "PRD.md", "file_type": "concept", "degree": 4}, {"id": "sds_env_supabase", "label": "VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "VITE_SUPABASE_URL &amp; VITE_SUPABASE_ANON_KEY", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_react_vite_typescript_tailwind", "label": "React 18 + Vite + TypeScript + Tailwind CSS", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "React 18 + Vite + TypeScript + Tailwind CSS", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_supabase_postgresql_realtime", "label": "Supabase (PostgreSQL + Realtime Broadcast)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Supabase (PostgreSQL + Realtime Broadcast)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "concept", "degree": 4}, {"id": "sds_type_workstatus", "label": "WorkStatus Type (todo | in_progress | done)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "WorkStatus Type (todo | in_progress | done)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_zustand_persist_fallback", "label": "Zustand Persist (Hybrid Local Fallback)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Zustand Persist (Hybrid Local Fallback)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_opstrack_architecture", "label": "OpsTrack System Architecture (Vercel + PWA + WA Engine)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "OpsTrack System Architecture (Vercel + PWA + WA Engine)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "SDS.md", "file_type": "document", "degree": 3}, {"id": "design_system_opstrack_master_lucide_icons", "label": "Lucide Icons (Anti-Pattern: No Emoji Icons)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Lucide Icons (Anti-Pattern: No Emoji Icons)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "design-system/opstrack/MASTER.md", "file_type": "rationale", "degree": 1}, {"id": "design_system_opstrack_master_touch_targets", "label": "Touch-Friendly UI (44x44px, cursor-pointer)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Touch-Friendly UI (44x44px, cursor-pointer)", "community": 2, "community_name": "Stack React Vercel Supabase", "source_file": "design-system/opstrack/MASTER.md", "file_type": "rationale", "degree": 1}, {"id": "prd_project", "label": "Project (Nama Toko, Kode, Kategori, Tanggal Target)", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Project (Nama Toko, Kode, Kategori, Tanggal Target)", "community": 3, "community_name": "Model Project & Task", "source_file": "PRD.md", "file_type": "concept", "degree": 3}, {"id": "prd_sub_task_checklist", "label": "Sub-Item Checklist (Qty, Catatan, Status, PIC)", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Sub-Item Checklist (Qty, Catatan, Status, PIC)", "community": 3, "community_name": "Model Project & Task", "source_file": "PRD.md", "file_type": "concept", "degree": 2}, {"id": "prd_task", "label": "Task (Simpel vs Detil, Deadline, PIC)", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 35.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Task (Simpel vs Detil, Deadline, PIC)", "community": 3, "community_name": "Model Project & Task", "source_file": "PRD.md", "file_type": "concept", "degree": 5}, {"id": "sds_table_projects", "label": "Supabase Table projects", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Supabase Table projects", "community": 3, "community_name": "Model Project & Task", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_type_project", "label": "Project Interface", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Project Interface", "community": 3, "community_name": "Model Project & Task", "source_file": "SDS.md", "file_type": "concept", "degree": 3}, {"id": "sds_type_subtaskitem", "label": "SubTaskItem Interface", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "SubTaskItem Interface", "community": 3, "community_name": "Model Project & Task", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_type_taskitem", "label": "TaskItem Interface", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "TaskItem Interface", "community": 3, "community_name": "Model Project & Task", "source_file": "SDS.md", "file_type": "concept", "degree": 6}, {"id": "prd_mobile_first_pwa", "label": "Mobile-First PWA Installable", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Mobile-First PWA Installable", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "PRD.md", "file_type": "concept", "degree": 4}, {"id": "prd_pin_workspace_gate", "label": "Workspace PIN Gate (1x per Perangkat)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Workspace PIN Gate (1x per Perangkat)", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "PRD.md", "file_type": "concept", "degree": 2}, {"id": "sds_env_vite_workspace_pin", "label": "VITE_WORKSPACE_PIN", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "VITE_WORKSPACE_PIN", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_responsive_bottom_nav", "label": "Bottom Navigation Bar (Mobile <768px)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Bottom Navigation Bar (Mobile &lt;768px)", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_vite_plugin_pwa", "label": "PWA Engine (vite-plugin-pwa / manifest.webmanifest)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "PWA Engine (vite-plugin-pwa / manifest.webmanifest)", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_workspace_pin_gate", "label": "Workspace PIN Gate", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Workspace PIN Gate", "community": 4, "community_name": "PWA Mobile & PIN", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "prd_dashboard_action_now", "label": "Dashboard Panel Harus Dikerjakan Sekarang", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 30.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Dashboard Panel Harus Dikerjakan Sekarang", "community": 5, "community_name": "Dashboard & Deadline", "source_file": "PRD.md", "file_type": "concept", "degree": 4}, {"id": "prd_timeline_pekerjaan", "label": "Timeline Pekerjaan", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Timeline Pekerjaan", "community": 5, "community_name": "Dashboard & Deadline", "source_file": "PRD.md", "file_type": "concept", "degree": 1}, {"id": "prd_zero_missed_deadlines", "label": "Zero Missed Deadlines (Prioritas Eksekusi Otomatis)", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Zero Missed Deadlines (Prioritas Eksekusi Otomatis)", "community": 5, "community_name": "Dashboard & Deadline", "source_file": "PRD.md", "file_type": "concept", "degree": 3}, {"id": "design_system_opstrack_master_opstrack_ui", "label": "OpsTrack Design System", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "OpsTrack Design System", "community": 5, "community_name": "Dashboard & Deadline", "source_file": "design-system/opstrack/MASTER.md", "file_type": "document", "degree": 1}, {"id": "prd_opstrack", "label": "OpsTrack", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "OpsTrack", "community": 5, "community_name": "Dashboard & Deadline", "source_file": "PRD.md", "file_type": "document", "degree": 6}, {"id": "sds_api_cron_deadline_digest", "label": "GET /api/cron/deadline-digest", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "GET /api/cron/deadline-digest", "community": 6, "community_name": "Cron WA & API Gateway", "source_file": "SDS.md", "file_type": "concept", "degree": 6}, {"id": "sds_env_wa_api_token", "label": "WA_API_TOKEN", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "WA_API_TOKEN", "community": 6, "community_name": "Cron WA & API Gateway", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_vercel_cron_08_wib", "label": "Vercel Cron (0 1 * * * UTC / 08:00 WIB)", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 20.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Vercel Cron (0 1 * * * UTC / 08:00 WIB)", "community": 6, "community_name": "Cron WA & API Gateway", "source_file": "SDS.md", "file_type": "concept", "degree": 2}, {"id": "sds_vercel_json", "label": "vercel.json (Crons, Rewrites, Manifest Headers)", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "vercel.json (Crons, Rewrites, Manifest Headers)", "community": 6, "community_name": "Cron WA & API Gateway", "source_file": "SDS.md", "file_type": "concept", "degree": 1}, {"id": "sds_wa_gateway_fonnte", "label": "WhatsApp Gateway API (Fonnte / Wablas)", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 25.0, "font": {"size": 12, "color": "#ffffff"}, "title": "WhatsApp Gateway API (Fonnte / Wablas)", "community": 6, "community_name": "Cron WA & API Gateway", "source_file": "SDS.md", "file_type": "concept", "degree": 3}];
+const RAW_EDGES = [{"from": "prd_dynamic_template_system", "to": "prd_master_template_menu", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dynamic_template_system", "to": "prd_opstrack", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dynamic_template_system", "to": "prd_pekerjaan_random", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dynamic_template_system", "to": "prd_toko_go", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dynamic_template_system", "to": "sds_type_project_template", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_kebutuhan_toko_detil", "to": "prd_toko_go", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_master_template_menu", "to": "prd_simpan_sebagai_template", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_master_template_menu", "to": "prd_relative_deadline_template", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_master_template_menu", "to": "prd_toko_tutup", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_master_template_menu", "to": "sds_table_templates", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_relative_deadline_template", "to": "sds_default_template_toko_go", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_relative_deadline_template", "to": "sds_type_taskitem", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_toko_go", "to": "sds_default_template_toko_go", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_table_templates", "to": "sds_type_project_template", "label": "shares_data_with", "title": "shares_data_with [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_pic_nama_wa_tanpa_login", "to": "prd_opstrack", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_pic_nama_wa_tanpa_login", "to": "prd_wa_trigger_deadline_pagi", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_pic_nama_wa_tanpa_login", "to": "prd_wa_trigger_project_baru", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_pic_nama_wa_tanpa_login", "to": "prd_dashboard_action_now", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_pic_nama_wa_tanpa_login", "to": "sds_type_pic", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_wa_dual_mode", "to": "prd_wa_trigger_deadline_pagi", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_wa_dual_mode", "to": "prd_wa_trigger_project_baru", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_wa_dual_mode", "to": "sds_wa_me_deep_link_generator", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_wa_trigger_deadline_pagi", "to": "prd_vercel_realtime_deploy", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_wa_trigger_deadline_pagi", "to": "sds_api_cron_deadline_digest", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_wa_trigger_project_baru", "to": "sds_env_wa_main_group", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_wa_trigger_project_baru", "to": "sds_api_wa_notify_project", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_api_wa_notify_project", "to": "sds_wa_gateway_fonnte", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_api_wa_notify_project", "to": "sds_type_pic", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_api_wa_notify_project", "to": "sds_notify_new_project", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_normalize_phone", "to": "sds_type_pic", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_normalize_phone", "to": "sds_wa_me_deep_link_generator", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_notify_new_project", "to": "sds_type_taskitem", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_table_pics", "to": "sds_type_pic", "label": "shares_data_with", "title": "shares_data_with [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_type_pic", "to": "sds_api_cron_deadline_digest", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_vercel_realtime_deploy", "to": "sds_supabase_postgresql_realtime", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_work_status_three_stage", "to": "prd_task", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_work_status_three_stage", "to": "design_system_opstrack_master_touch_targets", "label": "rationale_for", "title": "rationale_for [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_work_status_three_stage", "to": "sds_zustand_persist_fallback", "label": "rationale_for", "title": "rationale_for [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_work_status_three_stage", "to": "sds_type_workstatus", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_env_supabase", "to": "sds_supabase_postgresql_realtime", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_react_vite_typescript_tailwind", "to": "sds_opstrack_architecture", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_react_vite_typescript_tailwind", "to": "design_system_opstrack_master_lucide_icons", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_supabase_postgresql_realtime", "to": "sds_zustand_persist_fallback", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_supabase_postgresql_realtime", "to": "sds_opstrack_architecture", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_opstrack_architecture", "to": "prd_opstrack", "label": "cites", "title": "cites [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_project", "to": "prd_task", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_project", "to": "sds_table_projects", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_project", "to": "sds_type_project", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_sub_task_checklist", "to": "prd_task", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_sub_task_checklist", "to": "sds_type_subtaskitem", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_task", "to": "prd_dashboard_action_now", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_task", "to": "sds_type_taskitem", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_table_projects", "to": "sds_type_project", "label": "shares_data_with", "title": "shares_data_with [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_type_project", "to": "sds_type_taskitem", "label": "shares_data_with", "title": "shares_data_with [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_type_subtaskitem", "to": "sds_type_taskitem", "label": "shares_data_with", "title": "shares_data_with [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_type_taskitem", "to": "sds_api_cron_deadline_digest", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_mobile_first_pwa", "to": "prd_pin_workspace_gate", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_mobile_first_pwa", "to": "prd_opstrack", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_mobile_first_pwa", "to": "sds_responsive_bottom_nav", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_mobile_first_pwa", "to": "sds_vite_plugin_pwa", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_pin_workspace_gate", "to": "sds_workspace_pin_gate", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_env_vite_workspace_pin", "to": "sds_workspace_pin_gate", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dashboard_action_now", "to": "prd_zero_missed_deadlines", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_dashboard_action_now", "to": "sds_api_cron_deadline_digest", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "prd_timeline_pekerjaan", "to": "prd_zero_missed_deadlines", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "prd_zero_missed_deadlines", "to": "prd_opstrack", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "design_system_opstrack_master_opstrack_ui", "to": "prd_opstrack", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "sds_api_cron_deadline_digest", "to": "sds_wa_gateway_fonnte", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_api_cron_deadline_digest", "to": "sds_vercel_cron_08_wib", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_env_wa_api_token", "to": "sds_wa_gateway_fonnte", "label": "conceptually_related_to", "title": "conceptually_related_to [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "sds_vercel_cron_08_wib", "to": "sds_vercel_json", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}];
+const LEGEND = [{"cid": 0, "color": "#4E79A7", "label": "Template &amp; Jenis Toko", "count": 11}, {"cid": 1, "color": "#F28E2B", "label": "PIC &amp; Notifikasi WA", "count": 11}, {"cid": 2, "color": "#E15759", "label": "Stack React Vercel Supabase", "count": 10}, {"cid": 3, "color": "#76B7B2", "label": "Model Project &amp; Task", "count": 7}, {"cid": 4, "color": "#59A14F", "label": "PWA Mobile &amp; PIN", "count": 6}, {"cid": 5, "color": "#EDC948", "label": "Dashboard &amp; Deadline", "count": 5}, {"cid": 6, "color": "#B07AA1", "label": "Cron WA &amp; API Gateway", "count": 5}];
+
+// HTML-escape helper — prevents XSS when injecting graph data into innerHTML
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Build vis datasets
+const nodesDS = new vis.DataSet(RAW_NODES.map(n => ({
+  id: n.id, label: n.label, color: n.color, size: n.size,
+  font: n.font, title: n.title,
+  _community: n.community, _community_name: n.community_name,
+  _source_file: n.source_file, _file_type: n.file_type, _degree: n.degree,
+})));
+
+const edgesDS = new vis.DataSet(RAW_EDGES.map((e, i) => ({
+  id: i, from: e.from, to: e.to,
+  label: '',
+  title: e.title,
+  dashes: e.dashes,
+  width: e.width,
+  color: e.color,
+  arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+})));
+
+const container = document.getElementById('graph');
+const network = new vis.Network(container, { nodes: nodesDS, edges: edgesDS }, {
+  physics: {
+    enabled: true,
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: {
+      gravitationalConstant: -60,
+      centralGravity: 0.005,
+      springLength: 120,
+      springConstant: 0.08,
+      damping: 0.4,
+      avoidOverlap: 0.8,
+    },
+    stabilization: { iterations: 200, fit: true },
+  },
+  interaction: {
+    hover: true,
+    tooltipDelay: 100,
+    hideEdgesOnDrag: true,
+    navigationButtons: false,
+    keyboard: false,
+  },
+  nodes: { shape: 'dot', borderWidth: 1.5 },
+  edges: { smooth: { type: 'continuous', roundness: 0.2 }, selectionWidth: 3 },
+});
+
+network.once('stabilizationIterationsDone', () => {
+  network.setOptions({ physics: { enabled: false } });
+});
+
+function showInfo(nodeId) {
+  const n = nodesDS.get(nodeId);
+  if (!n) return;
+  const neighborIds = network.getConnectedNodes(nodeId);
+  const neighborItems = neighborIds.map(nid => {
+    const nb = nodesDS.get(nid);
+    const color = nb ? nb.color.background : '#555';
+    return `<span class="neighbor-link" style="border-left-color:${esc(color)}" data-nid="${esc(nid)}">${esc(nb ? nb.label : nid)}</span>`;
+  }).join('');
+  document.getElementById('info-content').innerHTML = `
+    <div class="field"><b>${esc(n.label)}</b></div>
+    <div class="field">Type: ${esc(n._file_type || 'unknown')}</div>
+    <div class="field">Community: ${esc(n._community_name)}</div>
+    <div class="field">Source: ${esc(n._source_file || '-')}</div>
+    <div class="field">Degree: ${n._degree}</div>
+    ${neighborIds.length ? `<div class="field" style="margin-top:8px;color:#aaa;font-size:11px">Neighbors (${neighborIds.length})</div><div id="neighbors-list">${neighborItems}</div>` : ''}
+  `;
+}
+
+function focusNode(nodeId) {
+  network.focus(nodeId, { scale: 1.4, animation: true });
+  network.selectNodes([nodeId]);
+  showInfo(nodeId);
+}
+
+// Neighbor links use a data attribute + one delegated listener rather than an
+// inline onclick. A node id/label sourced from a document or a scraped URL
+// (graphify add) can contain a double-quote; dropping the stringified id
+// unescaped into a quoted onclick both broke every link and allowed a hostile
+// source to inject an event handler into the local report (stored XSS, #1838).
+// esc() on data-nid keeps the value inside the attribute; the listener reads it
+// back verbatim. Bound to document so it survives the innerHTML rebuild that
+// recreates #neighbors-list on each showInfo().
+document.addEventListener('click', e => {
+  const el = e.target.closest('.neighbor-link');
+  if (el && el.dataset.nid !== undefined) focusNode(el.dataset.nid);
+});
+
+// Track hovered node — hover detection is more reliable than click params
+let hoveredNodeId = null;
+network.on('hoverNode', params => {
+  hoveredNodeId = params.node;
+  container.style.cursor = 'pointer';
+});
+network.on('blurNode', () => {
+  hoveredNodeId = null;
+  container.style.cursor = 'default';
+});
+container.addEventListener('click', () => {
+  if (hoveredNodeId !== null) {
+    showInfo(hoveredNodeId);
+    network.selectNodes([hoveredNodeId]);
+  }
+});
+network.on('click', params => {
+  if (params.nodes.length > 0) {
+    showInfo(params.nodes[0]);
+  } else if (hoveredNodeId === null) {
+    document.getElementById('info-content').innerHTML = '<span class="empty">Click a node to inspect it</span>';
+  }
+});
+
+const searchInput = document.getElementById('search');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  searchResults.innerHTML = '';
+  if (!q) { searchResults.style.display = 'none'; return; }
+  const matches = RAW_NODES.filter(n => n.label.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { searchResults.style.display = 'none'; return; }
+  searchResults.style.display = 'block';
+  matches.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'search-item';
+    el.textContent = n.label;
+    el.style.borderLeft = `3px solid ${n.color.background}`;
+    el.style.paddingLeft = '8px';
+    el.onclick = () => {
+      network.focus(n.id, { scale: 1.5, animation: true });
+      network.selectNodes([n.id]);
+      showInfo(n.id);
+      searchResults.style.display = 'none';
+      searchInput.value = '';
+    };
+    searchResults.appendChild(el);
+  });
+});
+document.addEventListener('click', e => {
+  if (!searchResults.contains(e.target) && e.target !== searchInput)
+    searchResults.style.display = 'none';
+});
+
+const hiddenCommunities = new Set();
+
+const selectAllCb = document.getElementById('select-all-cb');
+
+function updateSelectAllState() {
+  const total = LEGEND.length;
+  const hidden = hiddenCommunities.size;
+  selectAllCb.checked = hidden === 0;
+  selectAllCb.indeterminate = hidden > 0 && hidden < total;
+}
+
+function toggleAllCommunities(hide) {
+  document.querySelectorAll('.legend-item').forEach(item => {
+    hide ? item.classList.add('dimmed') : item.classList.remove('dimmed');
+  });
+  document.querySelectorAll('.legend-cb').forEach(cb => {
+    cb.checked = !hide;
+  });
+  LEGEND.forEach(c => {
+    if (hide) hiddenCommunities.add(c.cid); else hiddenCommunities.delete(c.cid);
+  });
+  const updates = RAW_NODES.map(n => ({ id: n.id, hidden: hide }));
+  nodesDS.update(updates);
+  updateSelectAllState();
+}
+
+const legendEl = document.getElementById('legend');
+LEGEND.forEach(c => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'legend-cb';
+  cb.checked = true;
+  cb.addEventListener('change', (e) => {
+    e.stopPropagation();
+    if (cb.checked) {
+      hiddenCommunities.delete(c.cid);
+      item.classList.remove('dimmed');
+    } else {
+      hiddenCommunities.add(c.cid);
+      item.classList.add('dimmed');
+    }
+    const updates = RAW_NODES
+      .filter(n => n.community === c.cid)
+      .map(n => ({ id: n.id, hidden: !cb.checked }));
+    nodesDS.update(updates);
+    updateSelectAllState();
+  });
+  item.innerHTML = `<div class="legend-dot" style="background:${c.color}"></div>
+    <span class="legend-label">${c.label}</span>
+    <span class="legend-count">${c.count}</span>`;
+  item.prepend(cb);
+  item.onclick = (e) => {
+    if (e.target === cb) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  };
+  legendEl.appendChild(item);
+});
+</script>
+<script>
+// Render hyperedges as shaded regions
+const hyperedges = [{"id": "hyperedge_opstrack_whatsapp_notification_flow", "label": "WhatsApp Notification Flow (Project Baru + Deadline Digest)", "nodes": ["prd_wa_trigger_project_baru", "prd_wa_trigger_deadline_pagi", "prd_wa_dual_mode", "sds_api_wa_notify_project", "sds_api_cron_deadline_digest", "sds_vercel_cron_08_wib", "sds_wa_gateway_fonnte", "sds_wa_me_deep_link_generator", "sds_normalize_phone", "sds_type_pic"], "relation": "participate_in", "confidence": "EXTRACTED", "confidence_score": 0.95, "source_file": "PRD.md"}, {"id": "hyperedge_opstrack_mobile_cloud_stack", "label": "Mobile-First Cloud Stack (PWA, Vercel, Supabase, PIN)", "nodes": ["prd_mobile_first_pwa", "prd_pin_workspace_gate", "prd_vercel_realtime_deploy", "sds_vite_plugin_pwa", "sds_supabase_postgresql_realtime", "sds_zustand_persist_fallback", "sds_workspace_pin_gate", "sds_vercel_json", "sds_react_vite_typescript_tailwind"], "relation": "implement", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "SDS.md"}, {"id": "hyperedge_opstrack_core_data_model", "label": "OpsTrack Core Data Model (Projects, Tasks, Templates, PICs)", "nodes": ["sds_table_projects", "sds_table_templates", "sds_table_pics", "sds_type_project", "sds_type_taskitem", "sds_type_subtaskitem", "sds_type_project_template", "sds_type_pic", "prd_project", "prd_task", "prd_dynamic_template_system"], "relation": "form", "confidence": "INFERRED", "confidence_score": 0.95, "source_file": "SDS.md"}];
+// afterDrawing passes ctx already transformed to network coordinate space.
+// Draw node positions raw — no manual pan/zoom/DPR math needed.
+
+// Andrew's monotone chain. Returns the hull in counter-clockwise order, which
+// is what the perimeter must be traced in. Collinear and duplicate points
+// collapse to the extremes, so degenerate member sets render as a segment
+// rather than a zero-area crossed path.
+function convexHull(pts) {
+    const p = pts.slice().sort((a, b) => (a.x - b.x) || (a.y - b.y));
+    if (p.length < 3) return p;
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const build = seq => {
+        const out = [];
+        for (const q of seq) {
+            while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], q) <= 0) out.pop();
+            out.push(q);
+        }
+        out.pop();
+        return out;
+    };
+    const hull = build(p).concat(build(p.slice().reverse()));
+    return hull.length >= 3 ? hull : p;
+}
+network.on('afterDrawing', function(ctx) {
+    hyperedges.forEach(h => {
+        const positions = h.nodes
+            .map(nid => network.getPositions([nid])[nid])
+            .filter(p => p !== undefined);
+        if (positions.length < 2) return;
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Centroid and expanded hull in network coordinates.
+        // The perimeter must follow hull order, not h.nodes order: tracing the
+        // raw member order self-intersects whenever the layout does not happen
+        // to place members in angular order, filling as crossed wedges.
+        const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+        const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+        const hull = convexHull(positions);
+        const expanded = hull.map(p => ({
+            x: cx + (p.x - cx) * 1.15,
+            y: cy + (p.y - cy) * 1.15
+        }));
+        ctx.moveTo(expanded[0].x, expanded[0].y);
+        expanded.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        // Label
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(h.label, cx, cy - 5);
+        ctx.restore();
+    });
+});
+</script>
+</body>
+</html>
