@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, CalendarDays, Settings, Plus } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, CalendarDays, LayoutTemplate, Settings, Plus } from 'lucide-react'
 import { Button, Separator } from '@heroui/react'
 import { ActivePicSelect } from '@/components/ActivePicSelect'
 import type { AppView } from '@/types'
@@ -9,6 +9,7 @@ const nav: { id: AppView; label: string; short: string; icon: typeof LayoutDashb
   { id: 'dashboard', label: 'Kerjakan', short: 'Kerja', icon: LayoutDashboard },
   { id: 'projects', label: 'Project', short: 'Proj', icon: FolderKanban },
   { id: 'timeline', label: 'Timeline', short: 'Time', icon: CalendarDays },
+  { id: 'templates', label: 'Template', short: 'Templ', icon: LayoutTemplate },
   { id: 'settings', label: 'Atur', short: 'Atur', icon: Settings },
 ]
 
@@ -84,7 +85,7 @@ export function Layout({
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur safe-bottom md:hidden"
         aria-label="Navigasi mobile"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-4 gap-0.5 px-1 py-1">
+        <ul className="mx-auto grid max-w-lg grid-cols-5 gap-0.5 px-0.5 py-1">
           {nav.map(({ id, short, icon: Icon }) => (
             <li key={id}>
               <button

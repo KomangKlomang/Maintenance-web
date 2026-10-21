@@ -1,6 +1,6 @@
 export type WorkStatus = 'todo' | 'in_progress' | 'done'
 export type ProjectCategory = 'toko_go' | 'toko_tutup' | 'random'
-export type AppView = 'dashboard' | 'projects' | 'timeline' | 'settings'
+export type AppView = 'dashboard' | 'projects' | 'timeline' | 'templates' | 'settings'
 
 export interface PIC {
   id: string
@@ -45,6 +45,7 @@ export interface TemplateTaskBlueprint {
 export interface ProjectTemplate {
   id: string
   name: string
+  description?: string
   category: ProjectCategory
   tasksBlueprint: TemplateTaskBlueprint[]
 }

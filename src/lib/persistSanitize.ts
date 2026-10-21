@@ -1,7 +1,7 @@
 import { DEFAULT_TEMPLATES } from '@/data/defaults'
 import type { AppView, PIC, Project, ProjectLogEntry, ProjectTemplate, WorkStatus } from '@/types'
 
-const VIEWS: AppView[] = ['dashboard', 'projects', 'timeline', 'settings']
+const VIEWS: AppView[] = ['dashboard', 'projects', 'timeline', 'templates', 'settings']
 const STATUSES: WorkStatus[] = ['todo', 'in_progress', 'done']
 
 function asStatus(v: unknown): WorkStatus {

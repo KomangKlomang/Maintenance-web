@@ -6,6 +6,7 @@ import { PinGate } from '@/components/PinGate'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ProjectsPage } from '@/pages/ProjectsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { TemplatesPage } from '@/pages/TemplatesPage'
 import { TimelinePage } from '@/pages/TimelinePage'
 import { useAppStore } from '@/store/appStore'
 
@@ -24,6 +25,8 @@ export default function App() {
       <ProjectsPage />
     ) : activeView === 'timeline' ? (
       <TimelinePage />
+    ) : activeView === 'templates' ? (
+      <TemplatesPage />
     ) : (
       <SettingsPage />
     )

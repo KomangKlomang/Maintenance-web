@@ -43,7 +43,7 @@ function ProjectOverviewCard({ project }: { project: Project }) {
   const ringTone = alert?.level === 'urgent' ? 'danger' : alert?.level === 'warning' ? 'warning' : 'default'
 
   return (
-    <article className="op-panel rounded-xl border border-border/70 bg-background p-4">
+    <article className="op-panel border border-border/70 bg-background p-3 sm:p-4">
       <div className="flex gap-3.5">
         <ProjectProgressRing value={pct} label={project.title} tone={ringTone} />
 

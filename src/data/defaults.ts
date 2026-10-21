@@ -7,6 +7,7 @@ export const DEFAULT_TEMPLATES: ProjectTemplate[] = [
   {
     id: 'tpl_toko_go',
     name: 'Standar Toko GO',
+    description: 'Checklist GO default: ITR, planogram, cetak, kebutuhan toko.',
     category: 'toko_go',
     tasksBlueprint: [
       { id: uid('tb'), title: 'ITR Barang', isDetailed: false, offsetDays: -7, subTasks: [] },
@@ -30,12 +31,14 @@ export const DEFAULT_TEMPLATES: ProjectTemplate[] = [
   {
     id: 'tpl_toko_tutup',
     name: 'Toko Tutup (kosong)',
+    description: 'Mulai dari nol — tambah task sendiri setelah project dibuat.',
     category: 'toko_tutup',
     tasksBlueprint: [],
   },
   {
     id: 'tpl_random',
     name: 'Pekerjaan Random',
+    description: 'Project ad-hoc tanpa task bawaan.',
     category: 'random',
     tasksBlueprint: [],
   },

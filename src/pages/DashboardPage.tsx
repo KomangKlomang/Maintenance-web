@@ -38,7 +38,7 @@ export function DashboardPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/45">Prioritas hari ini</h2>
         {urgent.length === 0 ? (
-          <p className="op-panel rounded-xl border border-border/60 px-4 py-3 text-sm text-foreground/60">
+          <p className="op-panel border border-border/60 px-3 py-2.5 text-sm text-foreground/60 md:px-4 md:py-3">
             Tidak ada task terlambat atau H-0 s/d H-2.
           </p>
         ) : (
@@ -46,7 +46,7 @@ export function DashboardPage() {
             {urgent.map(({ project, task, urgency, urgencyText, deadline }) => (
               <li
                 key={`${project.id}-${task.id}`}
-                className="op-panel flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 px-4 py-3"
+                className="op-panel flex flex-wrap items-center justify-between gap-2 border border-border/60 px-3 py-2.5 md:gap-3 md:px-4 md:py-3"
               >
                 <div className="min-w-0">
                   <p className="font-medium">{task.title}</p>

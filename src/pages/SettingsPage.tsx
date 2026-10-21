@@ -1,10 +1,11 @@
 import { ActivePicSelect } from '@/components/ActivePicSelect'
+import { Button } from '@heroui/react'
 import { formatPhoneDisplay } from '@/lib/phone'
 import { useAppStore } from '@/store/appStore'
 
 export function SettingsPage() {
   const pics = useAppStore((s) => s.pics)
-  const templates = useAppStore((s) => s.templates)
+  const setView = useAppStore((s) => s.setView)
   const adminWaPhone = useAppStore((s) => s.adminWaPhone)
   const addPic = useAppStore((s) => s.addPic)
   const removePic = useAppStore((s) => s.removePic)
@@ -63,18 +64,12 @@ export function SettingsPage() {
         <p className="mt-1 text-xs text-[color:var(--color-muted-foreground)]">Dipakai jika project belum punya PIC saat kirim WA.</p>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Template</h2>
-        <ul className="space-y-2">
-          {templates.map((t) => (
-            <li key={t.id} className="rounded-xl border bg-white p-3 text-sm">
-              <p className="font-medium">{t.name}</p>
-              <p className="text-[color:var(--color-muted-foreground)]">
-                {t.category} · {t.tasksBlueprint.length} task
-              </p>
-            </li>
-          ))}
-        </ul>
+      <section className="op-panel border border-border/70 p-4">
+        <h2 className="mb-1 text-lg font-semibold">Template project</h2>
+        <p className="mb-3 text-sm text-foreground/60">Kelola checklist bawaan di halaman Template.</p>
+        <Button size="sm" variant="secondary" onPress={() => setView('templates')}>
+          Buka manajemen template
+        </Button>
       </section>
 
       <button type="button" className="min-h-11 rounded-xl border px-4 text-sm" onClick={lock}>

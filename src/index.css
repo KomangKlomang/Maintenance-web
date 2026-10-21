@@ -3,8 +3,8 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius: 0.625rem;
-  --field-radius: 0.5rem;
+  --radius: 0.25rem;
+  --field-radius: 0.25rem;
 }
 
 @layer base {
@@ -61,5 +61,49 @@
 
   .op-list-table {
     overflow-x: auto;
+  }
+
+  .op-pin-fall-item {
+    position: absolute;
+    top: -4rem;
+    z-index: 1;
+    animation-name: op-pin-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform, opacity;
+  }
+
+  .op-pin-fall-item--emoji {
+    filter: saturate(1.15);
+  }
+
+  .op-pin-fall-item--shape {
+    z-index: 0;
+  }
+
+  @keyframes op-pin-fall {
+    0% {
+      transform: translate3d(0, -8vh, 0) rotate(0deg) scale(0.85);
+      opacity: 0;
+    }
+    6% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 0.92;
+    }
+    100% {
+      transform: translate3d(var(--op-pin-drift, 0), 108vh, 0) rotate(var(--op-pin-spin, 540deg)) scale(1);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .op-pin-fall-item {
+      animation: none;
+      opacity: 0.2;
+      top: auto;
+      bottom: 8%;
+    }
   }
 }

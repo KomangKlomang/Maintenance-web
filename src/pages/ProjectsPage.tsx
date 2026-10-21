@@ -27,10 +27,10 @@ export function ProjectsPage() {
 
   if (!project) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <div>
-          <h2 className="text-xl font-semibold">Project</h2>
-          <p className="text-sm text-foreground/60">Pilih project untuk mengatur task.</p>
+          <h2 className="text-lg font-semibold md:text-xl">Project</h2>
+          <p className="text-xs text-foreground/60 md:text-sm">Pilih project untuk mengatur task.</p>
         </div>
         {projects.length === 0 ? (
           <p className="text-sm text-foreground/60">Belum ada project.</p>
@@ -47,7 +47,7 @@ export function ProjectsPage() {
         project={project}
         onBack={() => selectProject(null)}
         onSaveTemplate={() => {
-          const name = prompt('Nama template baru', `${project.title} template`)
+          const name = prompt('Nama template (muncul di daftar project baru)', project.title)
           if (name) saveProjectAsTemplate(project.id, name)
         }}
         onDelete={() => {
