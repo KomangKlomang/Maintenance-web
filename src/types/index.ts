@@ -2,6 +2,8 @@ export type WorkStatus = 'todo' | 'in_progress' | 'done'
 export type ProjectCategory = 'toko_go' | 'toko_tutup' | 'random'
 export type AppView = 'dashboard' | 'projects' | 'timeline' | 'templates' | 'settings'
 
+export type { AppModule, MasterStore, MasterStoreDataset } from '@/types/masterStore'
+
 export interface PIC {
   id: string
   name: string

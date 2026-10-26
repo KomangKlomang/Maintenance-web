@@ -106,4 +106,30 @@
       bottom: 8%;
     }
   }
+
+  @keyframes op-hero-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 1rem, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .op-hero-rise {
+    animation: op-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .op-hero-rise-text {
+    animation: op-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .op-hero-rise,
+    .op-hero-rise-text {
+      animation: none;
+    }
+  }
 }

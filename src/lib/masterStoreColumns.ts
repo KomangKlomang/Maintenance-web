@@ -1,0 +1,91 @@
+import type { MasterStore } from '@/types/masterStore'
+
+/** Kolom export/import — sama dengan script PowerShell & export sistem. */
+export const MASTER_STORE_EXCEL_COLUMNS: { header: string; key: keyof MasterStore }[] = [
+  { header: 'Kode Toko', key: 'storeCode' },
+  { header: 'Nama', key: 'name' },
+  { header: 'Asal Toko', key: 'origin' },
+  { header: 'Alamat', key: 'address' },
+  { header: 'Region', key: 'region' },
+  { header: 'Provinsi', key: 'province' },
+  { header: 'Kota / Kabupaten', key: 'city' },
+  { header: 'Kecamatan', key: 'district' },
+  { header: 'ZIP Code', key: 'zipCode' },
+  { header: 'Status', key: 'status' },
+  { header: 'AC (Area Coordinator)', key: 'areaCoordinator' },
+  { header: 'AM (Area Manager)', key: 'areaManager' },
+  { header: 'Latitude', key: 'latitude' },
+  { header: 'Longitude', key: 'longitude' },
+  { header: 'Tanggal Go Live', key: 'goLiveDate' },
+  { header: 'Keterangan', key: 'notes' },
+  { header: 'Nomor HP', key: 'phone' },
+  { header: 'Tanggal Tutup', key: 'closedDate' },
+  { header: 'Tipe Toko', key: 'storeType' },
+  { header: 'Relokasi Building Aset', key: 'relocationBuilding' },
+  { header: 'Relokasi GS Aset', key: 'relocationGs' },
+  { header: 'Jam Buka', key: 'openTime' },
+  { header: 'Jam Tutup', key: 'closeTime' },
+  { header: 'Dibuat Oleh', key: 'createdBy' },
+  { header: 'Dibuat Pada', key: 'createdAt' },
+  { header: 'Diperbarui Pada', key: 'updatedAt' },
+  { header: 'Disetujui Oleh', key: 'approvedBy' },
+  { header: 'Waktu Persetujuan', key: 'approvedAt' },
+]
+
+export const MASTER_STORE_DETAIL_SECTIONS: { title: string; keys: (keyof MasterStore)[] }[] = [
+  {
+    title: 'Identitas',
+    keys: ['storeCode', 'name', 'origin', 'storeType', 'status'],
+  },
+  {
+    title: 'Lokasi',
+    keys: ['address', 'region', 'province', 'city', 'district', 'zipCode', 'latitude', 'longitude'],
+  },
+  {
+    title: 'Operasi',
+    keys: ['goLiveDate', 'closedDate', 'openTime', 'closeTime', 'phone', 'notes'],
+  },
+  {
+    title: 'Tim area',
+    keys: ['areaManager', 'areaCoordinator'],
+  },
+  {
+    title: 'Relokasi',
+    keys: ['relocationBuilding', 'relocationGs'],
+  },
+  {
+    title: 'Audit',
+    keys: ['createdBy', 'createdAt', 'updatedAt', 'approvedBy', 'approvedAt'],
+  },
+]
+
+export const MASTER_STORE_FIELD_LABELS: Record<keyof MasterStore, string> = {
+  storeCode: 'Kode toko',
+  name: 'Nama',
+  origin: 'Asal toko',
+  address: 'Alamat',
+  region: 'Region',
+  province: 'Provinsi',
+  city: 'Kota / kabupaten',
+  district: 'Kecamatan',
+  zipCode: 'ZIP',
+  status: 'Status',
+  areaCoordinator: 'AC',
+  areaManager: 'AM',
+  latitude: 'Latitude',
+  longitude: 'Longitude',
+  goLiveDate: 'Tanggal go live',
+  notes: 'Keterangan',
+  phone: 'Nomor HP',
+  closedDate: 'Tanggal tutup',
+  storeType: 'Tipe toko',
+  relocationBuilding: 'Relokasi building',
+  relocationGs: 'Relokasi GS',
+  openTime: 'Jam buka',
+  closeTime: 'Jam tutup',
+  createdBy: 'Dibuat oleh',
+  createdAt: 'Dibuat pada',
+  updatedAt: 'Diperbarui pada',
+  approvedBy: 'Disetujui oleh',
+  approvedAt: 'Waktu persetujuan',
+}

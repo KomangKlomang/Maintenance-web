@@ -1,5 +1,13 @@
-import { LayoutDashboard, FolderKanban, CalendarDays, LayoutTemplate, Settings, Plus } from 'lucide-react'
-import { Button, Separator } from '@heroui/react'
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  FolderKanban,
+  CalendarDays,
+  LayoutTemplate,
+  Settings,
+  Plus,
+} from 'lucide-react'
+import { Button } from '@heroui/react'
 import { ActivePicSelect } from '@/components/ActivePicSelect'
 import type { AppView } from '@/types'
 import { cn } from '@/lib/utils'
@@ -22,13 +30,26 @@ export function Layout({
 }) {
   const activeView = useAppStore((s) => s.activeView)
   const setView = useAppStore((s) => s.setView)
+  const clearAppModule = useAppStore((s) => s.clearAppModule)
 
   return (
     <div className="flex min-h-dvh bg-default/10">
       <aside className="sticky top-0 hidden h-dvh w-[4.25rem] shrink-0 flex-col border-r border-border/60 bg-background md:flex lg:w-[10.25rem]">
-        <div className="flex h-12 items-center justify-center border-b border-border/50 px-2 lg:justify-start lg:px-3">
-          <span className="text-sm font-bold tracking-tight text-blue-700 lg:text-base">Ops</span>
-          <span className="hidden font-bold tracking-tight text-blue-700 lg:inline">Track</span>
+        <div className="flex h-12 items-center gap-1 border-b border-border/50 px-1.5 lg:gap-2 lg:px-2">
+          <Button
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            aria-label="Kembali ke menu modul"
+            className="shrink-0 min-w-8"
+            onPress={clearAppModule}
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+          </Button>
+          <div className="hidden min-w-0 flex-1 items-baseline gap-0 lg:flex">
+            <span className="text-sm font-bold tracking-tight text-blue-700 lg:text-base">Ops</span>
+            <span className="font-bold tracking-tight text-blue-700">Track</span>
+          </div>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 p-1.5" aria-label="Navigasi utama">
           {nav.map(({ id, label, icon: Icon }) => {
@@ -55,27 +76,31 @@ export function Layout({
           <div className="hidden lg:block">
             <ActivePicSelect compact />
           </div>
-          <Separator />
-          <Button
-            size="sm"
-            className="h-9 w-full min-w-0 justify-center gap-0 px-0 lg:justify-start lg:gap-2 lg:px-2.5"
-            variant="primary"
-            aria-label="Project baru"
-            onPress={onNewProject}
-          >
-            <Plus className="size-[1.125rem] shrink-0" aria-hidden />
-            <span className="hidden text-xs lg:inline">Project baru</span>
-          </Button>
         </div>
       </aside>
 
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col pb-[4.25rem] md:pb-0">
         <header className="sticky top-0 z-10 border-b border-border/60 bg-background/90 backdrop-blur md:hidden">
-          <div className="flex h-12 items-center justify-between px-4">
-            <h1 className="text-base font-bold text-blue-700">OpsTrack</h1>
-            <Button isIconOnly size="sm" variant="primary" aria-label="Project baru" onPress={onNewProject}>
-              <Plus className="size-5" />
-            </Button>
+          <div className="flex h-12 items-center justify-between gap-2 px-3">
+            <div className="flex min-w-0 items-center gap-1">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label="Kembali ke menu modul"
+                onPress={clearAppModule}
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+              </Button>
+              <h1 className="truncate text-base font-bold text-blue-700">OpsTrack</h1>
+            </div>
+            {activeView !== 'projects' ? (
+              <Button isIconOnly size="sm" variant="primary" aria-label="Project baru" onPress={onNewProject}>
+                <Plus className="size-5" />
+              </Button>
+            ) : (
+              <span className="size-8" aria-hidden />
+            )}
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 md:px-6 md:py-5">{children}</main>

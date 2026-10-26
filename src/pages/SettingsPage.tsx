@@ -11,6 +11,7 @@ export function SettingsPage() {
   const removePic = useAppStore((s) => s.removePic)
   const setAdminWaPhone = useAppStore((s) => s.setAdminWaPhone)
   const lock = useAppStore((s) => s.lock)
+  const clearAppModule = useAppStore((s) => s.clearAppModule)
 
   return (
     <div className="space-y-8">
@@ -72,9 +73,14 @@ export function SettingsPage() {
         </Button>
       </section>
 
-      <button type="button" className="min-h-11 rounded-xl border px-4 text-sm" onClick={lock}>
-        Kunci workspace (PIN)
-      </button>
+      <section className="flex flex-col gap-2 sm:flex-row">
+        <Button size="sm" variant="secondary" onPress={clearAppModule}>
+          Ganti modul (OpsTrack / Master)
+        </Button>
+        <button type="button" className="min-h-11 rounded-xl border px-4 text-sm" onClick={lock}>
+          Kunci workspace (PIN)
+        </button>
+      </section>
     </div>
   )
 }

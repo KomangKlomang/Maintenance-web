@@ -5,11 +5,14 @@ import { mergePersistedState } from '@/lib/persistSanitize'
 import { isBuiltInTemplate } from '@/lib/templates'
 import { STATUS_LABEL } from '@/lib/taskStatus'
 import { DEFAULT_TEMPLATES, PIC_COLORS } from '@/data/defaults'
+import { seedMasterStoreDataset } from '@/data/masterStores'
+import { mergeMasterStores } from '@/lib/masterStoreNormalize'
 import { addDays } from '@/lib/dates'
 import { normalizePhone } from '@/lib/phone'
 import { nextStatus, syncParentFromSubTasks } from '@/lib/taskStatus'
 import { uid } from '@/lib/utils'
 import type {
+  AppModule,
   AppView,
   PIC,
   Project,
@@ -21,9 +24,11 @@ import type {
   TemplateTaskBlueprint,
   WorkStatus,
 } from '@/types'
+import type { MasterStore, MasterStoreDataset } from '@/types/masterStore'
 
 interface AppState {
   pinUnlocked: boolean
+  appModule: AppModule | null
   activeView: AppView
   selectedProjectId: string | null
   activePicId: string | null
@@ -33,8 +38,15 @@ interface AppState {
   pics: PIC[]
   templates: ProjectTemplate[]
   projects: Project[]
+  masterStoreDataset: MasterStoreDataset
+  mergeMasterStoresFromExcel: (
+    imported: MasterStore[],
+    sourceFile: string,
+  ) => { added: number; updated: number; unchanged: number }
   unlockPin: (pin: string, expected: string) => boolean
   lock: () => void
+  setAppModule: (module: AppModule) => void
+  clearAppModule: () => void
   setView: (v: AppView) => void
   selectProject: (id: string | null) => void
   setActivePicId: (id: string | null) => void
@@ -58,6 +70,8 @@ interface AppState {
   }) => Project
   updateProject: (id: string, patch: Partial<Project>) => void
   deleteProject: (id: string) => void
+  bulkDeleteProjects: (ids: string[]) => void
+  bulkCompleteProjects: (ids: string[]) => void
   saveProjectAsTemplate: (projectId: string, name: string) => void
   cycleTaskStatus: (projectId: string, taskId: string, subTaskId?: string) => void
   setTaskStatus: (projectId: string, taskId: string, status: WorkStatus, subTaskId?: string) => void
@@ -110,6 +124,17 @@ function buildLogEntry(get: () => AppState, summary: string, detail?: string): P
   }
 }
 
+function markProjectAllTasksDone(project: Project): Project {
+  return touchProject({
+    ...project,
+    tasks: project.tasks.map((t) => ({
+      ...t,
+      status: 'done',
+      subTasks: t.subTasks.map((s) => ({ ...s, status: 'done' as WorkStatus })),
+    })),
+  })
+}
+
 function pushLog(set: (fn: (state: AppState) => Partial<AppState>) => void, get: () => AppState, projectId: string, summary: string, detail?: string) {
   const entry = buildLogEntry(get, summary, detail)
   set((state) => ({
@@ -125,6 +150,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       pinUnlocked: false,
+      appModule: null,
       activeView: 'dashboard',
       selectedProjectId: null,
       activePicId: null,
@@ -134,13 +160,32 @@ export const useAppStore = create<AppState>()(
       pics: [],
       templates: DEFAULT_TEMPLATES,
       projects: [],
+      masterStoreDataset: seedMasterStoreDataset,
+
+      mergeMasterStoresFromExcel: (imported, sourceFile) => {
+        const current = get().masterStoreDataset.stores
+        const { stores, stats } = mergeMasterStores(current, imported)
+        set({
+          masterStoreDataset: {
+            meta: {
+              exportedAt: new Date().toISOString().slice(0, 10),
+              source: sourceFile,
+              total: stores.length,
+            },
+            stores,
+          },
+        })
+        return stats
+      },
 
       unlockPin: (pin, expected) => {
         const ok = pin === expected
         if (ok) set({ pinUnlocked: true })
         return ok
       },
-      lock: () => set({ pinUnlocked: false }),
+      lock: () => set({ pinUnlocked: false, appModule: null }),
+      setAppModule: (module) => set({ appModule: module }),
+      clearAppModule: () => set({ appModule: null }),
       setView: (v) => set({ activeView: v }),
       selectProject: (id) => set({ selectedProjectId: id, activeView: id ? 'projects' : 'projects' }),
 
@@ -287,6 +332,27 @@ export const useAppStore = create<AppState>()(
           projects: get().projects.filter((p) => p.id !== id),
           selectedProjectId: get().selectedProjectId === id ? null : get().selectedProjectId,
         }),
+
+      bulkDeleteProjects: (ids) => {
+        if (ids.length === 0) return
+        const idSet = new Set(ids)
+        const selected = get().selectedProjectId
+        set({
+          projects: get().projects.filter((p) => !idSet.has(p.id)),
+          selectedProjectId: selected && idSet.has(selected) ? null : selected,
+        })
+      },
+
+      bulkCompleteProjects: (ids) => {
+        if (ids.length === 0) return
+        const idSet = new Set(ids)
+        set({
+          projects: get().projects.map((p) => (idSet.has(p.id) ? markProjectAllTasksDone(p) : p)),
+        })
+        for (const id of ids) {
+          pushLog(set, get, id, 'Bulk: semua task selesai', `${ids.length} project diproses`)
+        }
+      },
 
       saveProjectAsTemplate: (projectId, name) => {
         const pr = get().projects.find((p) => p.id === projectId)
@@ -470,6 +536,8 @@ export const useAppStore = create<AppState>()(
           pics: slice.pics ?? current.pics,
           templates: slice.templates ?? current.templates,
           activePicId: slice.activePicId ?? current.activePicId,
+          appModule: slice.appModule !== undefined ? slice.appModule : current.appModule,
+          masterStoreDataset: slice.masterStoreDataset ?? current.masterStoreDataset,
           clientIp: slice.clientIp ?? current.clientIp,
           deviceLabel: slice.deviceLabel ?? current.deviceLabel,
         }

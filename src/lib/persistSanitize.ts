@@ -1,5 +1,8 @@
 import { DEFAULT_TEMPLATES } from '@/data/defaults'
-import type { AppView, PIC, Project, ProjectLogEntry, ProjectTemplate, WorkStatus } from '@/types'
+import type { AppModule, AppView, PIC, Project, ProjectLogEntry, ProjectTemplate, WorkStatus } from '@/types'
+import type { MasterStore, MasterStoreDataset } from '@/types/masterStore'
+import { normalizeStore } from '@/lib/masterStoreNormalize'
+import { seedMasterStoreDataset } from '@/data/masterStores'
 
 const VIEWS: AppView[] = ['dashboard', 'projects', 'timeline', 'templates', 'settings']
 const STATUSES: WorkStatus[] = ['todo', 'in_progress', 'done']
@@ -100,8 +103,11 @@ function sanitizePic(raw: unknown): PIC | null {
   }
 }
 
+const APP_MODULES: AppModule[] = ['opstrack', 'master']
+
 export type PersistedSlice = {
   pinUnlocked?: boolean
+  appModule?: AppModule | null
   activeView?: AppView
   selectedProjectId?: string | null
   activePicId?: string | null
@@ -111,6 +117,37 @@ export type PersistedSlice = {
   pics?: PIC[]
   templates?: ProjectTemplate[]
   projects?: Project[]
+  masterStoreDataset?: MasterStoreDataset
+}
+
+function sanitizeMasterStore(raw: unknown): MasterStore | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const code = r.storeCode
+  if (code == null || String(code).trim() === '') return null
+  try {
+    return normalizeStore({ ...(r as Partial<MasterStore>), storeCode: String(code) })
+  } catch {
+    return null
+  }
+}
+
+function sanitizeMasterStoreDataset(raw: unknown): MasterStoreDataset | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const d = raw as MasterStoreDataset
+  const stores = Array.isArray(d.stores)
+    ? d.stores.map(sanitizeMasterStore).filter((x): x is MasterStore => x !== null)
+    : []
+  if (stores.length === 0) return undefined
+  const meta = d.meta && typeof d.meta === 'object' ? d.meta : seedMasterStoreDataset.meta
+  return {
+    meta: {
+      exportedAt: typeof meta.exportedAt === 'string' ? meta.exportedAt : seedMasterStoreDataset.meta.exportedAt,
+      source: typeof meta.source === 'string' ? meta.source : seedMasterStoreDataset.meta.source,
+      total: stores.length,
+    },
+    stores,
+  }
 }
 
 export function mergePersistedState(persisted: unknown): PersistedSlice {
@@ -138,8 +175,16 @@ export function mergePersistedState(persisted: unknown): PersistedSlice {
   let activePicId = p.activePicId ?? null
   if (activePicId && pics && !pics.some((pic) => pic.id === activePicId)) activePicId = null
 
+  const appModule =
+    p.appModule === null || p.appModule === undefined
+      ? null
+      : APP_MODULES.includes(p.appModule as AppModule)
+        ? p.appModule
+        : null
+
   return {
     pinUnlocked: Boolean(p.pinUnlocked),
+    appModule,
     activeView,
     selectedProjectId,
     activePicId,
@@ -149,5 +194,6 @@ export function mergePersistedState(persisted: unknown): PersistedSlice {
     pics,
     templates,
     projects,
+    masterStoreDataset: sanitizeMasterStoreDataset(p.masterStoreDataset),
   }
 }

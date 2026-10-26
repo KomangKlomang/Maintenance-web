@@ -20,6 +20,10 @@ PWA (`vite-plugin-pwa`) sementara dinonaktifkan agar dependency lebih ringan; de
 
 Buka `http://localhost:5173` — PIN default: **1234** (ubah lewat `VITE_WORKSPACE_PIN`).
 
+Setelah PIN, pilih modul **OpsTrack** (project & task) atau **Master Toko** (data export Excel). Master toko saat ini dari `src/data/masterStores.json`; re-import: `powershell -File .\scripts\import-master-stores.ps1 -ExcelPath "..."`.
+
+Copy `.env.example` → `.env` untuk variabel lokal. Skema DB cloud: `supabase/schema.sql`.
+
 ## Graph knowledge
 
 - `graphify-out/graph.html` — peta relasi PRD/SDS/design system
@@ -27,8 +31,25 @@ Buka `http://localhost:5173` — PIN default: **1234** (ubah lewat `VITE_WORKSPA
 
 ## Deploy Vercel
 
-Push repo → import di Vercel → set env opsional:
+```powershell
+# Login sekali
+npx vercel login
+gh auth login   # optional, untuk push GitHub
 
-- `VITE_WORKSPACE_PIN`
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (sync cloud, fase berikutnya)
-- `WA_API_TOKEN`, `WA_MAIN_GROUP_OR_ADMIN_PHONE` (cron WA otomatis, fase berikutnya)
+# Deploy production dari folder proyek
+powershell -File .\scripts\deploy-vercel.ps1
+```
+
+Atau hubungkan repo GitHub di [Vercel Dashboard](https://vercel.com/new) → import `Maintenance-web` → auto-deploy tiap push.
+
+**Environment variables (Production):**
+
+| Variable | Wajib | Keterangan |
+|----------|-------|------------|
+| `VITE_WORKSPACE_PIN` | Ya (prod) | Ganti dari default 1234 |
+| `VITE_SUPABASE_URL` | Untuk DB cloud | Dari Supabase → Settings → API |
+| `VITE_SUPABASE_ANON_KEY` | Untuk DB cloud | Anon public key |
+
+Database: lihat [`supabase/README.md`](supabase/README.md) — buat project Supabase, jalankan migration, optional seed toko.
+
+Cron WA (`WA_API_TOKEN`, …) menyusul setelah folder `api/` ada.

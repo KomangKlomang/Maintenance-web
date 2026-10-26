@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { Plus } from 'lucide-react'
 import { Button, Card, Input, Table } from '@heroui/react'
 import { ProjectListTable } from '@/components/ProjectListTable'
 import { ProjectActivityLog } from '@/components/ProjectActivityLog'
@@ -11,7 +12,7 @@ import { useAppStore } from '@/store/appStore'
 
 const OFFSET_PRESETS = [-7, -5, -3, -1, 0] as const
 
-export function ProjectsPage() {
+export function ProjectsPage({ onNewProject }: { onNewProject: () => void }) {
   const projects = useAppStore((s) => s.projects)
   const selectedProjectId = useAppStore((s) => s.selectedProjectId)
   const pics = useAppStore((s) => s.pics)
@@ -28,12 +29,24 @@ export function ProjectsPage() {
   if (!project) {
     return (
       <div className="space-y-3 md:space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold md:text-xl">Project</h2>
-          <p className="text-xs text-foreground/60 md:text-sm">Pilih project untuk mengatur task.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold md:text-xl">Project</h2>
+            <p className="text-xs text-foreground/60 md:text-sm">Pilih project untuk mengatur task.</p>
+          </div>
+          <Button variant="primary" className="h-10 shrink-0 font-semibold" onPress={onNewProject}>
+            <Plus className="size-4" aria-hidden />
+            Project baru
+          </Button>
         </div>
         {projects.length === 0 ? (
-          <p className="text-sm text-foreground/60">Belum ada project.</p>
+          <div className="op-panel border border-dashed border-border/70 px-4 py-8 text-center">
+            <p className="mb-3 text-sm text-foreground/60">Belum ada project.</p>
+            <Button variant="secondary" onPress={onNewProject}>
+              <Plus className="size-4" aria-hidden />
+              Buat project pertama
+            </Button>
+          </div>
         ) : (
           <ProjectListTable projects={projects} />
         )}
@@ -45,6 +58,7 @@ export function ProjectsPage() {
     <div className="space-y-4">
       <ProjectHeader
         project={project}
+        onNewProject={onNewProject}
         onBack={() => selectProject(null)}
         onSaveTemplate={() => {
           const name = prompt('Nama template (muncul di daftar project baru)', project.title)

@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Button, Separator } from '@heroui/react'
 import { ActivePicSelect } from '@/components/ActivePicSelect'
 import { formatDateTime } from '@/lib/dates'
@@ -8,11 +8,13 @@ import type { Project } from '@/types'
 export function ProjectHeader({
   project,
   onBack,
+  onNewProject,
   onSaveTemplate,
   onDelete,
 }: {
   project: Project
   onBack: () => void
+  onNewProject?: () => void
   onSaveTemplate: () => void
   onDelete: () => void
 }) {
@@ -49,6 +51,12 @@ export function ProjectHeader({
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <ActivePicSelect />
           <div className="flex flex-wrap gap-2">
+            {onNewProject ? (
+              <Button size="sm" variant="primary" onPress={onNewProject}>
+                <Plus className="size-4" aria-hidden />
+                Project baru
+              </Button>
+            ) : null}
             <Button size="sm" variant="secondary" onPress={onSaveTemplate}>
               Simpan template
             </Button>
