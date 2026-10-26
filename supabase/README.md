@@ -5,6 +5,10 @@
 1. Buka [Supabase Dashboard](https://supabase.com/dashboard) → **New project**.
 2. Catat **Project URL** dan **anon public** key (Settings → API).
 
+**Project ref:** `ozcnfxlzoazssbssbihp` · **Pooler (IPv4):** `aws-0-ap-northeast-1.pooler.supabase.com` · user `postgres.ozcnfxlzoazssbssbihp`
+
+Host `db.*.supabase.co` sering hanya IPv6; dari Windows pakai pooler di atas (lihat `scripts/supabase-remote.ps1`).
+
 ## 2. Terapkan skema
 
 **Opsi A — SQL Editor (paling cepat)**

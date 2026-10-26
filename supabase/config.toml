@@ -1,5 +1,5 @@
 # Supabase local CLI — https://supabase.com/docs/guides/cli
-project_id = "opstrack"
+project_id = "ozcnfxlzoazssbssbihp"
 
 [api]
 enabled = true
